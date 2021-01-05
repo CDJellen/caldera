@@ -27,6 +27,7 @@ class Contact(BaseWorld):
         self.contact_svc = services.get('contact_svc')
         self.log = self.create_logger('contact_gist')
         self.key = ''
+        self.pending_uploads = dict()  # maps agent paw to inner dict mapping uploaded filename to file chunks
 
     def retrieve_config(self):
         return self.key
@@ -41,6 +42,7 @@ class Contact(BaseWorld):
         while True:
             await self.handle_beacons(await self.get_results())
             await self.handle_beacons(await self.get_beacons())
+            await self.handle_uploads(await self.get_uploads())
             await asyncio.sleep(15)
 
     async def valid_config(self):
@@ -76,6 +78,23 @@ class Contact(BaseWorld):
             return await self._get_gist_data(comm_type='beacon')
         except Exception:
             self.log.debug('Receiving beacons over c2 (%s) failed!' % self.__class__.__name__)
+            return []
+
+    async def handle_uploads(self, uploads):
+        for upload in uploads:
+            print(upload)
+            print("")
+
+
+    async def get_uploads(self):
+        """
+        Retrieve all GIST posted file uploads for this C2's api key
+        :return:
+        """
+        try:
+            return await self._get_gist_data(comm_type='upload')
+        except Exception as e:
+            self.log.error('Receiving file uploads over c2 (%s) failed: %s' % (self.__class__.__name__, e))
             return []
 
     """ PRIVATE """
